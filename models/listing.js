@@ -18,7 +18,9 @@ const ListingSchema = new schema({
     // },
     image: {
         filename: String,
-        url: String
+        url: String,
+        // default : "https://unsplash.com/photos/person-in-black-shorts-sitting-on-brown-wooden-bench-pb7gfl7_Ni8",
+        // set : (v)=>v === ""?"https://unsplash.com/photos/person-in-black-shorts-sitting-on-brown-wooden-bench-pb7gfl7_Ni8" : v,
     },
 
     price: Number,

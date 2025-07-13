@@ -6,7 +6,9 @@ const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-
+const wrapAsync = require("./utils/warpAsync.js");
+const ExpressError = require("./utils/ExpressError.js");
+const {listingSchema} = require("./schema.js");
 main()
 .then(()=>{
     console.log("connected to db");
@@ -26,6 +28,23 @@ app.use(express.static(path.join(__dirname,"/public")));
 app.get("/",(req,res)=>{
     res.send("Hi , I am root");
 });
+
+process.on("uncaughtException", (err) => {
+    console.error("Uncaught Exception:", err);
+});
+
+const validateListing = (req,res,next)=>{
+        let {error} = listingSchema.validate(req.body);
+        let errorMessage = error.details.map((el)=>el.message).join(",");
+        // console.log(result);
+        if(error){
+            throw new ExpressError(400, errorMessage);
+        }
+        else{
+            next();
+        }
+}
+
 
 // app.get("/testListing",async (req,res)=>{
 //     let sampleListing = new Listing({
@@ -60,11 +79,19 @@ app.get("/listings/:id",async (req,res)=>{
 });
 
 //create routee
-app.post("/listings",async (req,res)=>{
+app.post("/listings",async (req,res,next)=>{
     // let listing = req.body.listing;
-    let newListing = new Listing(req.body.listing);
+    
+    try{
+        
+        let newListing = new Listing(req.body.listing);
     await newListing.save();
     res.redirect("/listings");
+    }
+    catch(err){
+        next(err);
+    }
+    
 });
 
 //edit route
@@ -89,6 +116,20 @@ app.delete("/listings/:id",async (req,res)=>{
     let deletedListing = await Listing.findByIdAndDelete(id);
     console.log(deletedListing);
     res.redirect("/listings");
+});
+
+
+// app.all("*",(req,res,next)=>{
+//     next(new ExpressError(404,"Page not Found!"));
+// });
+
+
+app.use((err,req,res,next)=>{
+    // res.send("Something went wrong");
+    let {statusCode = 500,message = "Unknown error"} = err;
+    // console.log(err);
+    // res.status(statusCode).send(message);
+    res.status(statusCode).render("listings/error.ejs",{message});
 });
 
 app.listen(8080,()=>{
