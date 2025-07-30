@@ -9,6 +9,10 @@ const ejsMate = require("ejs-mate");
 const wrapAsync = require("./utils/warpAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
 const {listingSchema} = require("./schema.js");
+const Review = require("./models/reviews.js");
+const {reviewSchema} = require("./schema.js");
+const warpAsync = require("./utils/warpAsync.js");
+
 main()
 .then(()=>{
     console.log("connected to db");
@@ -35,9 +39,23 @@ process.on("uncaughtException", (err) => {
 
 const validateListing = (req,res,next)=>{
         let {error} = listingSchema.validate(req.body);
-        let errorMessage = error.details.map((el)=>el.message).join(",");
+        
         // console.log(result);
         if(error){
+            let errorMessage = error.details.map((el)=>el.message).join(",");
+            throw new ExpressError(400, errorMessage);
+        }
+        else{
+            next();
+        }
+};
+
+const validateReview = (req,res,next)=>{
+        let {error} = reviewSchema.validate(req.body);
+        
+        // console.log(result);
+        if(error){
+            let errorMessage = error.details.map((el)=>el.message).join(",");
             throw new ExpressError(400, errorMessage);
         }
         else{
@@ -45,6 +63,32 @@ const validateListing = (req,res,next)=>{
         }
 }
 
+//review
+app.post("/listings/:id/reviews",validateReview,wrapAsync(async (req,res)=>{
+    let listing = await Listing.findById(req.params.id);
+    let newReview = await Review(req.body.review);
+
+    listing.reviews.push(newReview);
+    // await review.validate();
+    await newReview.save();
+    await listing.save();
+
+    console.log("new review saved");
+    // res.send("new review saved");
+    res.redirect(`/listings/${listing._id}`);
+
+}));
+
+//delete review
+app.delete("/listings/:id/review/:reviewId",warpAsync( async(req,res)=>{
+    let {id,reviewId} = req.params;
+
+    await Listing.findByIdAndUpdate(id,{$pull : {reviews : reviewId}});
+    await Review.findByIdAndDelete(reviewId);
+
+    res.redirect(`/listings/${id}`);
+
+}));
 
 // app.get("/testListing",async (req,res)=>{
 //     let sampleListing = new Listing({
@@ -73,7 +117,9 @@ app.get("/listings/new",(req,res)=>{
 //show route
 app.get("/listings/:id",async (req,res)=>{
     let {id} = req.params;
-    const listing = await Listing.findById(id);
+    // const listing = await Listing.findById(id);
+    //** */
+    const listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs",{listing});
 
 });

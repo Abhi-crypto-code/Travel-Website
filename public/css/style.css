@@ -51,10 +51,13 @@ body{
     align-items: space-evenly;
  }
 
- .card{
+ .listing-card{
     border: none !important;
     margin-bottom: 2rem;
  }
+ /* .card{
+   border: 1rem;
+ } */
  .card-img-top{
     border-radius: 1rem !important;
     width: 100% !important;
@@ -99,3 +102,12 @@ body{
    padding-left: 0;
    padding-right: 0;
  } */
+
+.review-card {
+  border: 1px solid #ddd !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
+  /* text-align: center; */
+}
