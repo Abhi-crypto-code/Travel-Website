@@ -13,6 +13,9 @@ const Review = require("./models/reviews.js");
 const {reviewSchema} = require("./schema.js");
 const warpAsync = require("./utils/warpAsync.js");
 
+const listings = require("./routes/listing.js");
+const reviews = require("./routes/review.js");
+
 main()
 .then(()=>{
     console.log("connected to db");
@@ -61,34 +64,12 @@ const validateReview = (req,res,next)=>{
         else{
             next();
         }
-}
+};
 
-//review
-app.post("/listings/:id/reviews",validateReview,wrapAsync(async (req,res)=>{
-    let listing = await Listing.findById(req.params.id);
-    let newReview = await Review(req.body.review);
 
-    listing.reviews.push(newReview);
-    // await review.validate();
-    await newReview.save();
-    await listing.save();
 
-    console.log("new review saved");
-    // res.send("new review saved");
-    res.redirect(`/listings/${listing._id}`);
-
-}));
-
-//delete review
-app.delete("/listings/:id/review/:reviewId",warpAsync( async(req,res)=>{
-    let {id,reviewId} = req.params;
-
-    await Listing.findByIdAndUpdate(id,{$pull : {reviews : reviewId}});
-    await Review.findByIdAndDelete(reviewId);
-
-    res.redirect(`/listings/${id}`);
-
-}));
+app.use("/listings",listings);
+app.use("/listings/:id/reviews",reviews);
 
 // app.get("/testListing",async (req,res)=>{
 //     let sampleListing = new Listing({
@@ -103,66 +84,8 @@ app.delete("/listings/:id/review/:reviewId",warpAsync( async(req,res)=>{
 //     res.send("Sample listing saved successfully!");
 // });
 
-//Index route
-app.get("/listings",async (req,res)=>{
-    let allListings = await Listing.find({});
-    res.render("listings/index.ejs",{allListings});
-});
- 
-//new route ** should come before :id**
-app.get("/listings/new",(req,res)=>{
-    res.render("listings/new.ejs");
-});
+//--------
 
-//show route
-app.get("/listings/:id",async (req,res)=>{
-    let {id} = req.params;
-    // const listing = await Listing.findById(id);
-    //** */
-    const listing = await Listing.findById(id).populate("reviews");
-    res.render("listings/show.ejs",{listing});
-
-});
-
-//create routee
-app.post("/listings",async (req,res,next)=>{
-    // let listing = req.body.listing;
-    
-    try{
-        
-        let newListing = new Listing(req.body.listing);
-    await newListing.save();
-    res.redirect("/listings");
-    }
-    catch(err){
-        next(err);
-    }
-    
-});
-
-//edit route
-app.get("/listings/:id/edit", async (req,res)=>{
-    let {id} = req.params;
-    const listing = await Listing.findById(id);
-    res.render("listings/edit.ejs",{listing});
-});
-
-
-//update route
-app.put("/listings/:id",async (req,res)=>{
-    let {id} = req.params;
-    await Listing.findByIdAndUpdate(id,{...req.body.listing});
-    res.redirect(`/listings/${id}`)
-
-});
-
-//Delete Route
-app.delete("/listings/:id",async (req,res)=>{
-    let {id} = req.params;
-    let deletedListing = await Listing.findByIdAndDelete(id);
-    console.log(deletedListing);
-    res.redirect("/listings");
-});
 
 
 // app.all("*",(req,res,next)=>{
