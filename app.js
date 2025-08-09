@@ -13,10 +13,17 @@ const Review = require("./models/reviews.js");
 const {reviewSchema} = require("./schema.js");
 const warpAsync = require("./utils/warpAsync.js");
 
-const listings = require("./routes/listing.js");
-const reviews = require("./routes/review.js");
+
+const listingsRoute = require("./routes/listing.js");
+const reviewsRoute = require("./routes/review.js");
+const userRoute  = require("./routes/user.js");
+
 const session = require("express-session");
 const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user.js");
+const user = require("./models/user.js");
 
 main()
 .then(()=>{
@@ -47,6 +54,15 @@ const  sessionOptions = {
 };
 app.use(session(sessionOptions));
 app.use(flash());
+
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+
 app.use((req,res,next)=>{
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
@@ -89,9 +105,20 @@ const validateReview = (req,res,next)=>{
 };
 
 
+app.get("/demouser",async(req,res)=>{
+    let fakeuser = new User({
+        email : "Student@gmail.com",
+        username : "new-Student"
+    });
+    let registeredUser = await User.register(fakeuser,"helloworld");
+    res.send(registeredUser);
 
-app.use("/listings",listings);
-app.use("/listings/:id/reviews",reviews);
+    
+});
+
+app.use("/listings",listingsRoute);
+app.use("/listings/:id/reviews",reviewsRoute);
+app.use("/",userRoute);
 
 // app.get("/testListing",async (req,res)=>{
 //     let sampleListing = new Listing({
