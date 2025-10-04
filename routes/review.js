@@ -2,8 +2,6 @@ const express = require("express");
 
 const router = express.Router({ mergeParams: true });
 
-
-
 const mongoose = require("mongoose");
 const Listing = require("../models/listing.js");
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
@@ -16,6 +14,7 @@ const {listingSchema} = require("../schema.js");
 const Review = require("../models/reviews.js");
 const {reviewSchema} = require("../schema.js");
 const warpAsync = require("../utils/warpAsync.js");
+const { isLoggedIn, isReviewAuthor } = require("../middleware.js");
 
 
 const validateReview = (req,res,next)=>{
@@ -32,9 +31,10 @@ const validateReview = (req,res,next)=>{
 };
 
 //review
-router.post("/",validateReview,wrapAsync(async (req,res)=>{
+router.post("/",validateReview,isLoggedIn,wrapAsync(async (req,res)=>{
     let listing = await Listing.findById(req.params.id);
     let newReview = new Review(req.body.review);
+    newReview.author = req.user._id;
     console.log(newReview);
     // if (!listing) {
     //     throw new ExpressError(404, "Listing not found"); // or res.status(404).send(...)
@@ -54,7 +54,7 @@ router.post("/",validateReview,wrapAsync(async (req,res)=>{
 }));
 
 //delete review
-router.delete("/:reviewId",warpAsync( async(req,res)=>{
+router.delete("/:reviewId",isLoggedIn,isReviewAuthor,warpAsync( async(req,res)=>{
     let {id,reviewId} = req.params;
 
     await Listing.findByIdAndUpdate(id,{$pull : {reviews : reviewId}});
