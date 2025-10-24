@@ -95,7 +95,9 @@ app.use((req,res,next)=>{
 //     res.send("Hi , I am root");
 // });
 
-
+app.get('/', (req, res) => {
+  res.redirect('/listings');
+});
 
 process.on("uncaughtException", (err) => {
     console.error("Uncaught Exception:", err);
